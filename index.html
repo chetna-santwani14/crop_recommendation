@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Crop Recommendation System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.3);
+            max-width: 700px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 28px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .results {
+            margin-top: 40px;
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+        }
+
+        .top-result {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .top-result h2 {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .top-result .crop-name {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-transform: capitalize;
+        }
+
+        .top-result .confidence {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .other-options h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .crop-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .crop-item {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .crop-item:hover {
+            background: #eee;
+            transform: translateX(5px);
+        }
+
+        .crop-item .crop-name {
+            font-weight: 600;
+            color: #333;
+            text-transform: capitalize;
+            font-size: 16px;
+        }
+
+        .crop-item .probability {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .progress-bar {
+            width: 120px;
+            height: 8px;
+            background: #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+
+        .percentage {
+            font-weight: 600;
+            color: #667eea;
+            min-width: 50px;
+            text-align: right;
+        }
+
+        .error {
+            background: #fee;
+            border: 1px solid #fcc;
+            color: #c33;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .info-text {
+            font-size: 12px;
+            color: #999;
+            margin-top: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌾 Crop Recommendation System</h1>
+
+        <form method="POST" action="/predict" id="cropForm">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="N">Nitrogen (N) kg/ha</label>
+                    <input type="number" id="N" name="N" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="P">Phosphorus (P) kg/ha</label>
+                    <input type="number" id="P" name="P" step="0.01" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="K">Potassium (K) kg/ha</label>
+                    <input type="number" id="K" name="K" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="temperature">Temperature (°C)</label>
+                    <input type="number" id="temperature" name="temperature" step="0.1" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="humidity">Humidity (%)</label>
+                    <input type="number" id="humidity" name="humidity" step="0.1" min="0" max="100" required>
+                </div>
+                <div class="form-group">
+                    <label for="ph">Soil pH</label>
+                    <input type="number" id="ph" name="ph" step="0.1" min="0" max="14" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="rainfall">Rainfall (mm)</label>
+                <input type="number" id="rainfall" name="rainfall" step="0.1" required>
+            </div>
+
+            <button type="submit">Get Recommendations</button>
+            <p class="info-text">Enter your soil and environmental parameters to get crop recommendations</p>
+        </form>
+
+        {% if error %}
+        <div class="error show">
+            <strong>Error:</strong> {{ error }}
+        </div>
+        {% endif %}
+
+        {% if top_crop %}
+        <div class="results show">
+            <div class="top-result">
+                <h2>✓ Best Match</h2>
+                <div class="crop-name">{{ top_crop.crop }}</div>
+                <div class="confidence">{{ top_crop.percentage }}% Suitable</div>
+            </div>
+
+            {% if all_crops|length > 1 %}
+            <div class="other-options">
+                <h3>Other Suitable Crops:</h3>
+                <div class="crop-list">
+                    {% for crop in all_crops[1:] %}
+                    <div class="crop-item">
+                        <span class="crop-name">{{ crop.crop }}</span>
+                        <div class="probability">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: {{ crop.percentage }}%"></div>
+                            </div>
+                            <span class="percentage">{{ crop.percentage }}%</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
